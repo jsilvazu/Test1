@@ -1,0 +1,10 @@
+*/bin/
+*/obj/
+.vs/
+WebApp/wwwroot/
+WebApp/files/
+WebApp/docs/
+WebApp/Properties/PublishProfiles/FolderProfile.pubxml.user
+WebApp/Properties/PublishProfiles/IISProfile.pubxml.user
+App/Properties/PublishProfiles/FolderProfile.pubxml.user
+WebApp/Deposits/
