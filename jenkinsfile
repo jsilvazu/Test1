@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+    stages {
+        stage ('Clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url:'https://github.com/jsilvazu/Test1.git'
+            }
+        }
+        stage('Example') {
+            steps {
+                script {
+                    echo "Build number: ${currentBuild.number}"
+                    echo "Workspace: ${env.WORKSPACE}"
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                sh(script: 'dotnet build ./WebApplication1.sln --configuration Release', returnStdout: true)
+            }
+        }
+        stage('Test') {  
+            steps {  
+                sh(script: 'dotnet test ./WebApplication1Tests/WebApplication1Tests.csproj --logger:trx', returnStdout: true)
+            }
+        }
+        stage('Publish') {
+            steps {
+                sh(script: 'dotnet publish ./WebApplication1.sln -c Release --output ./publish/Out', returnStdout: true)
+		        sh "zip -r ./publish/WebApplication1.zip ./publish/Out"
+            }
+        }
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: "publish/WebApplication1.zip", allowEmptyArchive: false
+            }
+        }
+    }
+    
+    post {
+        success {
+            emailext (
+                to: 'jsilva@blackstonemedicalservices.com',
+                subject: "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: """<p>Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' succeeded.</p><p>Check console output at <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>""",
+                mimeType: 'text/html',
+                attachmentsPattern: "publish/WebApplication1.zip"
+              )
+        }
+        failure {
+            emailext (
+                to: 'jsilva@blackstonemedicalservices.com',
+                subject: "FAILURE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: """<p>Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed.</p><p>Check console output at <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>""",
+                mimeType: 'text/html'
+            )
+        }
+    }
+}
